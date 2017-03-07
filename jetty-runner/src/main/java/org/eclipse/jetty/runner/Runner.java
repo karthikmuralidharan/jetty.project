@@ -20,7 +20,6 @@ package org.eclipse.jetty.runner;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.InterfaceAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -308,9 +307,10 @@ public class Runner
                     {
                         if (_server == null) // server not initialized yet
                         {
+                            // build the server
                             LOG.info("[VIS] Initiating a new server instance");
 
-                            _server = new Server(getInitialThreadPool());
+                            _server = new Server(createInitialThreadPool());
                         }
 
                         //apply jetty config files if there are any
@@ -572,7 +572,7 @@ public class Runner
         }
     }
 
-    private static ThreadPool getInitialThreadPool() {
+    private static ThreadPool createInitialThreadPool() {
 
         int DEFAULT_MIN_THREADS = 8;
         int DEFAULT_MAX_THREADS = 200;
@@ -580,9 +580,8 @@ public class Runner
 
         String jettyQueueSizeEnv = System.getenv("JETTY_QUEUE_SIZE");
         int queueSize = jettyQueueSizeEnv == null ? Integer.MAX_VALUE : Integer.parseInt(jettyQueueSizeEnv);
-
-        // build the server
         int capacity = Math.max(DEFAULT_MIN_THREADS, 8);
+
         BlockingArrayQueue queue = new BlockingArrayQueue<>(capacity, capacity, queueSize);
         QueuedThreadPool threadPool = new QueuedThreadPool(DEFAULT_MAX_THREADS, DEFAULT_MIN_THREADS, DEFAULT_IDLE_TIMEOUT, queue);
         return threadPool;
