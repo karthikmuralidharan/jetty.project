@@ -49,15 +49,12 @@ import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlet.StatisticsServlet;
-import org.eclipse.jetty.util.BlockingArrayQueue;
 import org.eclipse.jetty.util.RolloverFileOutputStream;
 import org.eclipse.jetty.util.StringUtil;
 import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.log.Logger;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.security.Constraint;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.eclipse.jetty.util.thread.ThreadPool;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.webapp.WebInfConfiguration;
 import org.eclipse.jetty.xml.XmlConfiguration;
@@ -237,7 +234,6 @@ public class Runner
 
         LOG.info("Runner");
         LOG.debug("Runner classpath {}",_classpath);
-        LOG.info("Warning: This version of Jetty-runner is customized for VIS (Voucher Inventory Service) with a BlockingArrayQueue with maxCapacity");
 
         String contextPath = __defaultContextPath;
         boolean contextPathSet = false;
@@ -308,15 +304,13 @@ public class Runner
                         if (_server == null) // server not initialized yet
                         {
                             // build the server
-                            LOG.info("[VIS] Initiating a new server instance");
-
-                            _server = new Server(createInitialThreadPool());
+                            _server = new Server();
                         }
 
                         //apply jetty config files if there are any
-                        if (_configFiles != null)
+                        if (_configFiles != null) 
                         {
-                            for (String cfg : _configFiles)
+                            for (String cfg : _configFiles) 
                             {
                                 try (Resource resource = Resource.newResource(cfg)) {
                                     XmlConfiguration xmlConfiguration = new XmlConfiguration(resource.getURL());
@@ -327,7 +321,7 @@ public class Runner
 
                         //check that everything got configured, and if not, make the handlers
                         HandlerCollection handlers = (HandlerCollection) _server.getChildHandlerByClass(HandlerCollection.class);
-                        if (handlers == null)
+                        if (handlers == null) 
                         {
                             handlers = new HandlerCollection();
                             _server.setHandler(handlers);
@@ -570,20 +564,5 @@ public class Runner
             e.printStackTrace();
             runner.usage(null);
         }
-    }
-
-    private static ThreadPool createInitialThreadPool() {
-
-        int DEFAULT_MIN_THREADS = 8;
-        int DEFAULT_MAX_THREADS = 200;
-        int DEFAULT_IDLE_TIMEOUT = 60000;
-
-        String jettyQueueSizeEnv = System.getenv("JETTY_QUEUE_SIZE");
-        int queueSize = jettyQueueSizeEnv == null ? Integer.MAX_VALUE : Integer.parseInt(jettyQueueSizeEnv);
-        int capacity = Math.max(DEFAULT_MIN_THREADS, 8);
-
-        BlockingArrayQueue queue = new BlockingArrayQueue<>(capacity, capacity, queueSize);
-        QueuedThreadPool threadPool = new QueuedThreadPool(DEFAULT_MAX_THREADS, DEFAULT_MIN_THREADS, DEFAULT_IDLE_TIMEOUT, queue);
-        return threadPool;
     }
 }
