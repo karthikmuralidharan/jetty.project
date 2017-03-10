@@ -22,23 +22,19 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ThreadPool;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.webapp.WebInfConfiguration;
-import org.eclipse.jetty.websocket.common.io.http.HttpResponseHeaderParser;
 import org.eclipse.jetty.xml.XmlConfiguration;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
-
-import static java.util.Optional.of;
 
 /**
  * Created by karthik on 09/03/17.
  */
-public class VISRunner extends Runner {
-    private static final Logger LOG = Log.getLogger(VISRunner.class);
+public class BoundedQueueRunner extends Runner {
+    private static final Logger LOG = Log.getLogger(BoundedQueueRunner.class);
 
     /**
      * Configure a jetty instance and deploy the webapps presented as args
@@ -320,12 +316,11 @@ public class VISRunner extends Runner {
     }
 
     private static ThreadPool createInitialThreadPool() {
-
-        int DEFAULT_MIN_THREADS = 8;
-        int DEFAULT_ACCEPTOR_COUNT = 8;
-        int DEFAULT_MAX_THREADS = 200;
-        int DEFAULT_IDLE_TIMEOUT = 60000;
-        int DEFAULT_MAX_CAPACITY = Integer.MAX_VALUE;
+        final int DEFAULT_MIN_THREADS = 8;
+        final int DEFAULT_ACCEPTOR_COUNT = 8;
+        final int DEFAULT_MAX_THREADS = 200;
+        final int DEFAULT_IDLE_TIMEOUT = 60000;
+        final int DEFAULT_MAX_CAPACITY = Integer.MAX_VALUE;
 
         String jettyQueueSizeEnv = System.getenv("JETTY_QUEUE_MAX_SIZE");
 
@@ -334,11 +329,14 @@ public class VISRunner extends Runner {
 
         BlockingQueue queue = new BlockingArrayQueue<>(capacity, capacity, queueSize);
         ThreadPool threadPool = new QueuedThreadPool(DEFAULT_MAX_THREADS, DEFAULT_MIN_THREADS, DEFAULT_IDLE_TIMEOUT, queue);
+
+        LOG.info("Set threadpool's queue maxCapactiy to " + queueSize);
+
         return threadPool;
     }
 
     public static void main(String[] args) {
-        Runner runner = new VISRunner();
+        Runner runner = new BoundedQueueRunner();
 
         try {
             if (args.length > 0 && args[0].equalsIgnoreCase("--help")) {
